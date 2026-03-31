@@ -1,148 +1,122 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
-import { SECTIONS } from '../utils/sectionConfig';
-import { WeekContext } from '../context/WeekContext';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useWeek } from '../context/WeekContext';
+import UniversalForm from '../components/forms/UniversalForm';
+import entryService from '../services/entry.service';
 import toast from 'react-hot-toast';
-import './SectionPage.css'; // Import the CSS file
 
 const SectionPage = () => {
   const { sectionName } = useParams();
-  const { activeWeek, isWeekSubmitted } = useContext(WeekContext);
+  const navigate = useNavigate();
+  const { activeWeek } = useWeek();
   const [entries, setEntries] = useState([]);
-  const [formData, setFormData] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const section = SECTIONS[sectionName];
+  useEffect(() => {
+    if (activeWeek) {
+      loadEntries();
+    }
+  }, [activeWeek, sectionName]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    // Mock entry creation - replace with API call when backend is ready
-    const newEntry = {
-      _id: Date.now().toString(),
-      data: formData,
-      enteredByName: 'Current User',
-      createdAt: new Date().toISOString()
-    };
-    
-    setEntries([...entries, newEntry]);
-    toast.success('Entry added successfully');
-    setFormData({});
-    setLoading(false);
+  const loadEntries = async () => {
+    try {
+      const data = await entryService.getEntriesBySection(activeWeek._id, sectionName);
+      setEntries(data);
+    } catch (error) {
+      toast.error('Failed to load entries');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (formData) => {
+    try {
+      await entryService.createEntry({
+        weekId: activeWeek._id,
+        section: sectionName,
+        data: formData
+      });
+      toast.success('Entry added successfully');
+      loadEntries();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to add entry');
+    }
   };
 
   const handleDelete = async (entryId) => {
-    if (!window.confirm('Delete this entry?')) return;
-    setEntries(entries.filter(e => e._id !== entryId));
-    toast.success('Entry deleted');
+    if (!window.confirm('Are you sure you want to delete this entry?')) return;
+    
+    try {
+      await entryService.deleteEntry(entryId);
+      toast.success('Entry deleted');
+      loadEntries();
+    } catch (error) {
+      toast.error('Failed to delete entry');
+    }
   };
 
-  if (!section) return <div className="section-page-container">Section not found</div>;
-  if (!activeWeek) return <div className="section-page-container">No active week</div>;
+  if (!activeWeek) {
+    return <div className="container"><div className="loading">No active week found</div></div>;
+  }
 
   return (
-    <div className="section-page-container">
-      <h1>{section.displayName}</h1>
-      
-      {isWeekSubmitted && (
-        <div className="warning-banner">
-          This week has been submitted. Entries are locked.
-        </div>
-      )}
+    <div className="container">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h1>{sectionName.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</h1>
+        <button onClick={() => navigate('/dashboard')} className="btn btn-primary">Back to Dashboard</button>
+      </div>
 
-      <div className="section-content-grid">
-        {!isWeekSubmitted && (
-          <div className="add-entry-form-card">
-            <h2>Add Entry</h2>
-            <form onSubmit={handleSubmit}>
-              {section.fields.map((field) => (
-                <div key={field.key} className="form-group">
-                  <label>
-                    {field.label} {field.required && <span className="required-asterisk">*</span>}
-                  </label>
-                  {field.type === 'textarea' ? (
-                    <textarea
-                      value={formData[field.key] || ''}
-                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                      required={field.required}
-                    />
-                  ) : field.type === 'select' ? (
-                    <select
-                      value={formData[field.key] || ''}
-                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                      required={field.required}
-                    >
-                      <option value="">Select...</option>
-                      {field.options.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type={field.type}
-                      value={formData[field.key] || ''}
-                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                      required={field.required}
-                    />
-                  )}
-                </div>
-              ))}
-              <button
-                type="submit"
-                disabled={loading}
-                className="submit-button"
-              >
-                {loading ? 'Adding...' : 'Add Entry'}
-              </button>
-            </form>
-          </div>
-        )}
+      <div className="card">
+        <h3>Week: {activeWeek.weekLabel}</h3>
+        <p>{new Date(activeWeek.startDate).toLocaleDateString()} - {new Date(activeWeek.endDate).toLocaleDateString()}</p>
+      </div>
 
-        <div className="entries-table-card">
-          <h2>Entries ({entries.length})</h2>
-          {entries.length === 0 ? (
-            <p className="no-entries">No entries yet</p>
-          ) : (
-            <div className="entries-table-wrapper">
-              <table className="entries-table">
-                <thead>
-                  <tr>
-                    {section.fields.map((field) => (
-                      <th key={field.key}>
-                        {field.label}
-                      </th>
+      <UniversalForm
+        section={sectionName}
+        onSubmit={handleSubmit}
+        weekDates={{ startDate: activeWeek.startDate, endDate: activeWeek.endDate }}
+      />
+
+      <div className="card">
+        <h3>Existing Entries ({entries.length})</h3>
+        {loading ? (
+          <div className="loading">Loading...</div>
+        ) : entries.length === 0 ? (
+          <p>No entries yet</p>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Details</th>
+                <th>Entered By</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry, index) => (
+                <tr key={entry._id}>
+                  <td>{index + 1}</td>
+                  <td>
+                    {Object.entries(entry.data).map(([key, value]) => (
+                      <div key={key}>
+                        <strong>{key}:</strong> {value instanceof Date ? value.toLocaleDateString() : String(value)}
+                      </div>
                     ))}
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.map((entry) => (
-                    <tr key={entry._id}>
-                      {section.fields.map((field) => (
-                        <td key={field.key}>
-                          {field.type === 'date' 
-                            ? new Date(entry.data[field.key]).toLocaleDateString()
-                            : entry.data[field.key]}
-                        </td>
-                      ))}
-                      <td>
-                        {!isWeekSubmitted && (
-                          <button
-                            onClick={() => handleDelete(entry._id)}
-                            className="delete-button"
-                          >
-                            Delete
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  </td>
+                  <td>{entry.enteredByName}</td>
+                  <td>{new Date(entry.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <button onClick={() => handleDelete(entry._id)} className="btn btn-danger" style={{padding: '5px 10px', fontSize: '12px'}}>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
