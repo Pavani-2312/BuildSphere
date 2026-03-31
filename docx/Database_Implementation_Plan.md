@@ -75,7 +75,7 @@ database/
 | `createdAt` | Date | Auto | Timestamp of account creation (via Mongoose timestamps) |
 | `updatedAt` | Date | Auto | Last modification timestamp |
 | `lastLogin` | Date | No | Updated on every successful login |
-| `refreshToken` | String | No | Hashed refresh token stored for session management |
+| `refreshTokenVersion` | Number | Yes | Token version counter for invalidation. Defaults to 0 |
 
 **Validations:**
 - `email` must be unique across the collection
@@ -209,6 +209,8 @@ skill_development_programs
 - Compound index on `{ weekId: 1, department: 1, isDeleted: 1 }` — for report generation: "all entries for department D in week Y"
 - Index on `{ enteredBy: 1 }` — for accountability: "all entries by user X"
 - Index on `{ weekId: 1, enteredBy: 1 }` — for contributor breakdown on dashboard
+- Index on `{ isDeleted: 1, createdAt: -1 }` — for filtering and sorting active entries
+- Index on `{ createdAt: 1 }` — for pagination cursor
 
 **The `data` Field — Section-Specific Structures:**
 
@@ -417,7 +419,7 @@ When a new week is created, the backend automatically creates 17 `section_status
 
 ### Collection 5: `audit_logs`
 
-**Purpose:** Immutable record of every meaningful action in the system. Provides full accountability and traceability. Audit logs are never deleted.
+**Purpose:** Immutable record of every meaningful action in the system. Provides full accountability and traceability. Recent logs (last 2 years) kept in active collection, older logs archived.
 
 **Schema Fields:**
 
@@ -442,12 +444,36 @@ When a new week is created, the backend automatically creates 17 `section_status
 - Index on `{ weekId: 1, timestamp: -1 }` — for fetching recent activity in a week (dashboard activity feed)
 - Index on `{ performedBy: 1, timestamp: -1 }` — for user activity history
 - Index on `{ action: 1 }` — for filtering specific action types
-- TTL index on `timestamp` with expiry of 365 days — auto-removes logs older than one year to manage storage (optional, can be removed if permanent audit is required)
+- Index on `{ timestamp: 1 }` — for archival queries
+
+**Archival Strategy:**
+- Audit logs older than 2 years are moved to a separate `audit_logs_archive` collection via a monthly cron job
+- Archived logs are stored in compressed format and can be exported to cold storage (S3 Glacier)
+- Active `audit_logs` collection maintains only last 2 years for performance
+- Archived logs remain queryable but with slower access time
 
 **Business Rules:**
 - Audit logs are append-only — no update or delete operations are ever performed on this collection
 - The `previousValue` for delete actions stores the complete entry data so recovery is possible
 - Login failures are also logged (with a failed action variant) to detect brute force attempts
+- Logs older than 2 years are automatically moved to `audit_logs_archive` collection monthly
+
+---
+
+### Collection 6: `audit_logs_archive`
+
+**Purpose:** Long-term storage for audit logs older than 2 years. Same schema as `audit_logs` but optimized for cold storage.
+
+**Schema:** Identical to `audit_logs` collection.
+
+**Indexes:**
+- Index on `{ timestamp: 1 }` — for date-range queries
+- Index on `{ performedBy: 1 }` — for user-specific audit trails
+
+**Storage Optimization:**
+- Uses MongoDB compression at collection level
+- Can be exported to S3 Glacier for cost-effective long-term storage
+- Queried only for compliance audits or investigations
 
 ---
 
@@ -550,10 +576,13 @@ The connection setup (`config/db.js`) uses Mongoose's `connect()` with the follo
 
 ## 10. Backup & Recovery Strategy
 
-- MongoDB Atlas automated backups enabled (daily snapshots retained for 7 days)
+- MongoDB Atlas automated backups enabled (daily snapshots retained for 30 days)
 - Before any week is archived, the final report data should be exported and stored separately
 - The soft-delete pattern means no data loss from accidental deletion — admin can recover by flipping `isDeleted` back to `false`
 - Audit logs retain the `previousValue` of every updated/deleted entry for forensic recovery
+- **Audit log archival**: Monthly cron job moves logs older than 2 years to `audit_logs_archive` collection
+- **Cold storage**: Archived audit logs exported quarterly to AWS S3 Glacier for compliance
+- **Hard delete policy**: Soft-deleted entries older than 5 years can be hard-deleted after admin approval
 
 ---
 
