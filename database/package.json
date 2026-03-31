@@ -5,7 +5,11 @@
   "main": "init.js",
   "scripts": {
     "init": "node init.js",
-    "test": "node test.js"
+    "test": "node test.js",
+    "seed": "node seeders/users.seed.js && node seeders/weeks.seed.js && node seeders/entries.seed.js",
+    "seed:users": "node seeders/users.seed.js",
+    "seed:weeks": "node seeders/weeks.seed.js",
+    "seed:entries": "node seeders/entries.seed.js"
   },
   "dependencies": {
     "mongoose": "^8.2.0",

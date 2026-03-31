@@ -67,7 +67,7 @@ After running `npm run init`:
 - Database: bvrit_report_db
 - Collections: 5 (users, weeks, reportentries, sectionstatuses, auditlogs)
 - Admin user: 1
-- Active week: 1 (CSE(AI&ML))
+- Active week: 1 (AIML)
 - Section statuses: 17 (all pending)
 - Entries: 0 (ready for data)
 

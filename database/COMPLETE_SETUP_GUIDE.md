@@ -210,7 +210,7 @@ Admin user created
   Password: Admin@2026
 Sample week created
   Week: Week 5 - March 2026
-  Department: CSE(AI&ML)
+  Department: AIML
 17 section statuses initialized
 
 Database initialization complete!
@@ -246,7 +246,7 @@ Test 1 - Admin User:
 
 Test 2 - Active Week:
   Label: Week 5 - March 2026
-  Department: CSE(AI&ML)
+  Department: AIML
   Start: Sun Mar 29 2026
   End: Sat Apr 04 2026
   Status: PASS
@@ -314,7 +314,7 @@ bvrit_report_db/
 ├── users (1 document)
 │   └── Admin user with hashed password
 ├── weeks (1 document)
-│   └── Active week for CSE(AI&ML) department
+│   └── Active week for AIML department
 ├── reportentries (0 documents)
 │   └── Empty, ready for report data
 ├── sectionstatuses (17 documents)
@@ -473,14 +473,14 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 // Example: Find active week
 const activeWeek = await Week.findOne({ 
-  department: 'CSE(AI&ML)', 
+  department: 'AIML', 
   status: 'active' 
 });
 
 // Example: Create new entry
 const entry = await ReportEntry.create({
   weekId: activeWeek._id,
-  department: 'CSE(AI&ML)',
+  department: 'AIML',
   section: 'student_achievements',
   data: {
     studentName: 'John Doe',

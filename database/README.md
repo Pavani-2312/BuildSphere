@@ -94,7 +94,7 @@ Test 1 - Admin User:
 
 Test 2 - Active Week:
   Label: Week 5 - March 2026
-  Department: CSE(AI&ML)
+  Department: AIML
   Start: Sun Mar 29 2026
   End: Sat Apr 04 2026
   Status: PASS

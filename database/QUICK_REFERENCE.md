@@ -90,6 +90,6 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 - 5 Collections with indexes
 - 1 Admin user (hashed password)
-- 1 Active week for CSE(AI&ML)
+- 1 Active week for AIML
 - 17 Section statuses (all pending)
 - 5 Mongoose models ready to use

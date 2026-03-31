@@ -67,7 +67,7 @@ const run = async () => {
 
     // Create sample week
     const admin = await User.findOne({ role: 'admin' });
-    const department = 'CSE(AI&ML)';
+    const department = 'AIML';
     
     const existingWeek = await Week.findOne({ 
       department, 
