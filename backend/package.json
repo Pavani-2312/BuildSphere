@@ -14,7 +14,10 @@
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2",
     "express-validator": "^7.0.1",
-    "socket.io": "^4.6.2"
+    "socket.io": "^4.6.2",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

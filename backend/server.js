@@ -1,24 +1,33 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
 const http = require('http');
 
 const connectDB = require('./config/db');
 const initializeSocket = require('./config/socketConfig');
 const setupSocketEvents = require('./socket/events.socket');
 const errorHandler = require('./middleware/errorHandler.middleware');
+const { apiLimiter } = require('./middleware/rateLimiter.middleware');
 
 const authRoutes = require('./routes/auth.routes');
 const weekRoutes = require('./routes/week.routes');
 const entryRoutes = require('./routes/entry.routes');
 const userRoutes = require('./routes/user.routes');
+const statusRoutes = require('./routes/status.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
+const reportRoutes = require('./routes/report.routes');
 
 const app = express();
 const server = http.createServer(app);
 
 // Middleware
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(morgan('dev'));
+app.use('/api/', apiLimiter);
 
 // Database connection
 connectDB();
@@ -33,6 +42,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/weeks', weekRoutes);
 app.use('/api/entries', entryRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/status', statusRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
