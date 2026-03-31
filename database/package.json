@@ -1,0 +1,15 @@
+{
+  "name": "buildsphere-database",
+  "version": "1.0.0",
+  "description": "Database setup for BuildSphere Weekly Report System",
+  "main": "init.js",
+  "scripts": {
+    "init": "node init.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "mongoose": "^8.2.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5"
+  }
+}
