@@ -38,6 +38,20 @@ setupSocketEvents(io);
 app.set('io', io);
 
 // Routes
+app.get('/', (req, res) => {
+  res.json({
+    message: 'BuildSphere API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      auth: '/api/auth',
+      weeks: '/api/weeks',
+      entries: '/api/entries',
+      users: '/api/users'
+    }
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/weeks', weekRoutes);
 app.use('/api/entries', entryRoutes);
