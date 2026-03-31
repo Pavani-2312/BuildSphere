@@ -109,7 +109,7 @@ All tests passed!
 
 ## Default Admin Credentials
 
-- **Email:** `admin@bvrithyderabad.edu.in`
+- **Email:** `24wh1a05z1@bvrithyderabad.edu.in`
 - **Password:** Set via `ADMIN_PASSWORD` in `.env` (default: `Admin@123`)
 
 ## Collections Created

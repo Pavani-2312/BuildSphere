@@ -52,7 +52,7 @@ const run = async () => {
       
       const admin = await User.create({
         name: 'System Administrator',
-        email: 'admin@bvrithyderabad.edu.in',
+        email: '24wh1a05z1@bvrithyderabad.edu.in',
         password: hashedPassword,
         role: 'admin',
         department: 'Administration',
@@ -61,7 +61,7 @@ const run = async () => {
       });
 
       console.log('Admin user created');
-      console.log('  Email: admin@bvrithyderabad.edu.in');
+      console.log('  Email: 24wh1a05z1@bvrithyderabad.edu.in');
       console.log('  Password:', process.env.ADMIN_PASSWORD || 'Admin@123');
     }
 
